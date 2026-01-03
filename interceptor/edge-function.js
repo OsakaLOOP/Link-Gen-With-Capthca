@@ -7,10 +7,9 @@ export async function onFetch(event) {
   // 0. Static Asset & Content-Type Check
   // User Requirement: filter staticExt with regex; only protect when html loaded.
   const staticExtRegex = /\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|otf|map|mp4|webm)$/i;
-  const acceptHeader = request.headers.get("Accept") || "";
 
-  // If it's a static file OR not explicitly requesting HTML, bypass protection
-  if (staticExtRegex.test(url.pathname) || !acceptHeader.includes("text/html")) {
+  // If it's a static file, bypass protection
+  if (staticExtRegex.test(url.pathname) ) {
       return fetch(request);
   }
 
