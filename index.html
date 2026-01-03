@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LOOP 公共短链接</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+        body{font-family:system-ui,-apple-system,sans-serif}
+        .spoiler{background-color:#1f2937;color:#1f2937;border-radius:4px;padding:0 4px;cursor:help;transition:all 0.2s ease;user-select:none}
+        .spoiler:hover{background-color:transparent;color:#9ca3af}
+        .hljs { background: transparent !important; padding: 0 !important; }
+        .katex { font-size: 1.1em; }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col items-center min-h-screen py-12 px-4">
+    <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-6">
+        <div class="mb-8 text-center">
+            <div class="flex items-center justify-center gap-3 mb-2 transition hover:scale-105 duration-300">
+                <img src="logo.svg" class="w-8 h-8 rounded-md shadow-sm border border-gray-100" >
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">生成LOOP 短链接</h1>
+            </div>
+            <p class="text-xs text-gray-400 font-mono border-t border-gray-100 pt-2 inline-block px-4">
+                基于KV存储的公共短链接服务, 服务端过期销毁, 用户仅可见本地存储.
+            </p>
+        </div>
+        <div class="space-y-4">
+            <input type="url" id="url" placeholder="输入你的长网址" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+            
+            <div class="flex gap-2">
+                <input type="text" id="slug" placeholder="自定义短链接后缀, 留空为随机" maxlength="10" class="flex-1 border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <select id="ttl" class="w-32 border rounded-lg p-3 text-sm bg-white">
+                    <option value="86400" selected>1 Day</option>
+                    <option value="604800">7 Days</option>
+                    <option value="2592000">30 Days</option>
+                </select>
+            </div>
+
+            <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                <div class="bg-gray-50 border border-gray-200 rounded shadow-sm p-3 mb-3 flex justify-between items-center select-none">
+                    <div class="flex items-center gap-3">
+                        <div class="w-6 h-6 bg-white border-2 border-gray-300 rounded-sm flex items-center justify-center shadow-inner">
+                            <svg class="w-4 h-4 text-green-500 animate-[bounce_0.5s_ease-out]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <span class="text-sm font-medium text-gray-600 font-sans">I'm not a robot</span>
+                    </div>
+                    <div class="flex flex-col items-center opacity-70">
+                        <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/> 
+                            </svg>
+                        <span class="text-[6px] text-gray-500 mt-0.5">reCAPTCHA</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between mb-2 select-none">
+                    <div class="text-sm font-mono text-blue-900 font-bold break-all pr-2" id="qStr">Loading...</div>
+                    <button onclick="loadCap()" class="text-blue-400 hover:text-blue-600 flex-shrink-0">↻</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-blue-800">LOOP Captcha:</span>
+                    <input type="text" id="cAns" placeholder="自信点, 输入答案..." class="flex-1 border rounded px-2 py-1 text-sm outline-none focus:border-blue-500">
+                </div>
+                <div class="mt-2 text-xs text-right">
+                    <span class="text-gray-400 mr-1">Hint:</span><span id="cHint" class="spoiler">...</span>
+                </div>
+                <input type="hidden" id="cId">
+            </div>
+
+            <button onclick="submit()" id="btn" class="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition disabled:opacity-50">创建链接</button>
+            <div id="err" class="text-red-500 text-xs text-center hidden"></div>
+        </div>
+
+        <div id="res" class="mt-6 hidden p-4 bg-green-50 rounded-lg border border-green-100">
+            <div class="flex gap-2">
+                <input type="text" id="short" readonly class="flex-1 bg-white border rounded px-3 py-2 text-sm text-gray-600">
+                <button onclick="copy()" class="bg-green-600 text-white px-4 rounded text-sm hover:bg-green-700">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full max-w-md mt-8">
+        <div class="flex justify-between items-center mb-2 px-1">
+            <h3 class="text-sm font-medium text-gray-500">本地历史</h3>
+            <button onclick="localStorage.removeItem('lh');renderH()" class="text-xs text-red-400 hover:underline">清除</button>
+        </div>
+        <ul id="hist" class="bg-white rounded-xl shadow-sm divide-y text-sm"></ul>
+    </div>
+
+    <script>
+        const API_HOST = ""; 
+        const TOKEN = "lolimainichi"; 
+
+        document.addEventListener('DOMContentLoaded', () => { loadCap(); renderH(); });
+
+        async function loadCap() {
+            const qStr = document.getElementById('qStr');
+            const hint = document.getElementById('cHint');
+            const qContainer = qStr.parentElement;
+
+            qContainer.classList.add('animate-pulse');
+            qStr.classList.add('opacity-50');
+            
+            try {
+                const res = await fetch(`${API_HOST}/api/captcha`);
+                const d = await res.json();
+                
+                // 1. 基础转义 (防止 HTML 注入，但保留反引号和美元符号)
+                let raw = d.str
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
+
+                // --- [Step 1] 提取多行代码块 (```...```) ---
+                const codeBlocks = [];
+                raw = raw.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+                    const cleanCode = code.replace(/^\n+|\n+$/g, '');
+                    const langClass = lang ? `language-${lang}` : '';
+                    codeBlocks.push({ code: cleanCode, lang: langClass });
+                    return `__CODE_BLOCK_${codeBlocks.length - 1}__`;
+                });
+
+                // --- [Step 2] 提取 LaTeX 公式 ---
+                // 支持行内 $...$ 和 块级 $$...$$
+                const latexBlocks = [];
+                // 优先匹配块级 $$...$$ (非贪婪匹配)
+                raw = raw.replace(/\$\$([\s\S]*?)\$\$/g, (match, tex) => {
+                    // 解码 HTML 转义字符 (因为 KaTeX 需要原始符号)
+                    const cleanTex = tex.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+                    latexBlocks.push({ tex: cleanTex, displayMode: true });
+                    return `__LATEX_${latexBlocks.length - 1}__`;
+                });
+                // 匹配行内 $...$
+                raw = raw.replace(/\$([^$]+)\$/g, (match, tex) => {
+                    const cleanTex = tex.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+                    latexBlocks.push({ tex: cleanTex, displayMode: false });
+                    return `__LATEX_${latexBlocks.length - 1}__`;
+                });
+
+                // --- [Step 3] 处理普通文本格式 ---
+                raw = raw.replace(/\n/g, '<br>'); // 换行
+                raw = raw.replace(/`([^`]+)`/g,   // 行内代码 `code`
+                    '<code class="bg-indigo-50 text-indigo-600 px-1.5 rounded border border-indigo-100 font-mono text-sm mx-1">$1</code>'
+                );
+
+                // --- [Step 4] 还原并渲染 LaTeX ---
+                raw = raw.replace(/__LATEX_(\d+)__/g, (match, index) => {
+                    const item = latexBlocks[index];
+                    try {
+                        // 使用 KaTeX 渲染为 HTML 字符串
+                        return katex.renderToString(item.tex, {
+                            displayMode: item.displayMode,
+                            throwOnError: false // 容错模式
+                        });
+                    } catch (err) {
+                        return `<span class="text-red-500">[Math Error]</span>`;
+                    }
+                });
+
+                // --- [Step 5] 还原代码块 ---
+                raw = raw.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+                    const item = codeBlocks[index];
+                    return `<div class="my-3 bg-[#282c34] rounded-lg border border-gray-700 shadow-inner overflow-hidden text-left group relative select-none" oncontextmenu="return false">
+                        <div class="flex gap-1.5 px-3 py-2 border-b border-gray-700/50 bg-[#21252b]">
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                        </div>
+                        <div class="p-3 overflow-x-auto">
+                            <pre><code class="${item.lang}">${item.code}</code></pre>
+                        </div>
+                    </div>`;
+                });
+
+                qStr.innerHTML = raw;
+
+                // 触发代码高亮
+                qStr.querySelectorAll('pre code').forEach((block) => {
+                    hljs.highlightElement(block);
+                });
+
+                hint.innerText = d.hint; 
+                document.getElementById('cId').value = d.id;
+                document.getElementById('cAns').value = '';
+
+            } catch(e) { 
+                console.error(e);
+                qStr.innerText = "Error loading captcha"; 
+            } finally { 
+                qContainer.classList.remove('animate-pulse');
+                qStr.classList.remove('opacity-50');
+            }
+        }
+
+        async function submit() {
+            const el = (id) => document.getElementById(id);
+            const btn = el('btn');
+            btn.disabled = true; el('err').classList.add('hidden'); el('res').classList.add('hidden');
+            
+            try {
+                const res = await fetch(`${API_HOST}/api/create`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-Access-Token': TOKEN},
+                    body: JSON.stringify({
+                        url: el('url').value, slug: el('slug').value, ttl: el('ttl').value,
+                        capId: el('cId').value, capAns: el('cAns').value
+                    })
+                });
+                const d = await res.json();
+                if(!d.success) throw new Error(d.error);
+
+                // [修改] 拼接当前域名
+                const full = `${window.location.origin}/${d.slug}`;
+                el('short').value = full;
+                el('res').classList.remove('hidden');
+                
+                const h = JSON.parse(localStorage.getItem('lh')||'[]');
+                h.unshift({s:d.slug, u:el('url').value, e:d.expireAt});
+                localStorage.setItem('lh', JSON.stringify(h.slice(0,20)));
+                renderH(); loadCap();
+            } catch(e) {
+                el('err').innerText = e.message;
+                el('err').classList.remove('hidden');
+                if(e.message.includes('Captcha')) loadCap();
+            } finally { btn.disabled = false; }
+        }
+
+        function renderH() {
+            const l = document.getElementById('hist');
+            // 读取历史记录
+            const h = JSON.parse(localStorage.getItem('lh')||'[]');
+            
+            l.innerHTML = h.length ? '' : '<li class="p-4 text-center text-gray-400 text-xs">No local history</li>';
+            
+            h.forEach(i => {
+                // 将 ISO 字符串转换为时间戳数字进行比较
+                const now = Date.now();
+                
+
+                // 显示具体过期日期
+                let dateDisplay = "Unknown";
+                if (i.e) {
+                    const expiryTime = new Date(i.e).getTime();
+                    // 检查是否为有效日期 (NaN check)
+                    if (!isNaN(expiryTime)) {
+                        valid = Date.now() < expiryTime;
+                        dateDisplay = new Date(i.e).toLocaleDateString() + ' ' + new Date(i.e).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    }
+                }
+                l.innerHTML += `<li class="p-3 flex justify-between items-center hover:bg-blue-50/50 transition border-b border-gray-100 last:border-0 group">
+                    <div class="overflow-hidden w-2/3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-blue-600 font-bold font-mono text-sm">/${i.s}</span>
+                            <button onclick="navigator.clipboard.writeText('${window.location.origin}/${i.s}');this.innerText='Copied!'" class="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-500 px-1.5 rounded opacity-0 group-hover:opacity-100 transition">Copy</button>
+                        </div>
+                        <div class="text-gray-400 text-xs truncate" title="${i.u}">${i.u}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs font-bold ${valid?'text-emerald-500':'text-rose-400'}">
+                            ${valid ? 'Active' : 'Expired'}
+                        </div>
+                        <div class="text-[10px] text-gray-300 font-mono">${dateDisplay}</div>
+                    </div>
+                </li>`;
+            });
+        }
+        function copy() { navigator.clipboard.writeText(document.getElementById('short').value); alert('Copied'); }
+    </script>
+</body>
+</html>
