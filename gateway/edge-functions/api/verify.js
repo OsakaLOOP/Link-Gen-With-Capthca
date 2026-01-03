@@ -16,9 +16,12 @@ export async function onRequest({ request }) {
   if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers });
 
   const CapDB = globalThis.CAPTCHA_KV;
-  const SessDB = globalThis.SESSION_KV;
+  // Session storage replaced by JWT
 
-  if (!CapDB || !SessDB) return new Response(JSON.stringify({ error: "KV Bindings Missing" }), { status: 500, headers });
+  if (!CapDB) return new Response(JSON.stringify({ error: "KV Bindings Missing" }), { status: 500, headers });
+
+  // Secret should be provided via environment variable
+  const SECRET = globalThis.JWT_SECRET || "CHANGE_ME_IN_PROD_SECRET_KEY_12345";
 
   try {
     const body = await request.json();
@@ -37,25 +40,56 @@ export async function onRequest({ request }) {
         return new Response(JSON.stringify({ success: false, error: "Incorrect Answer" }), { status: 400, headers });
     }
 
-    const sessionId = crypto.randomUUID();
-    const expiresAt = Date.now() + (CONFIG.SESSION_TTL * 1000);
+    // Generate JWT
+    const now = Math.floor(Date.now() / 1000);
+    const exp = now + CONFIG.SESSION_TTL;
 
-    await SessDB.put(sessionId, JSON.stringify({
-      valid: true,
-      created: Date.now(),
-      expiresAt: expiresAt
-    }), { expirationTtl: CONFIG.SESSION_TTL });
+    const jwt = await signJWT({ valid: true, exp }, SECRET);
 
-    const cookieHeader = `${CONFIG.COOKIE_NAME}=${sessionId}; Domain=${CONFIG.COOKIE_DOMAIN}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${CONFIG.SESSION_TTL}`;
+    const cookieHeader = `${CONFIG.COOKIE_NAME}=${jwt}; Domain=${CONFIG.COOKIE_DOMAIN}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${CONFIG.SESSION_TTL}`;
 
     headers['Set-Cookie'] = cookieHeader;
 
     return new Response(JSON.stringify({
       success: true,
-      expiresAt: new Date(expiresAt).toISOString()
+      expiresAt: new Date(exp * 1000).toISOString()
     }), { headers });
 
   } catch (e) {
     return new Response(JSON.stringify({ error: e.message }), { status: 500, headers });
   }
+}
+
+async function signJWT(payload, secret) {
+    const header = { alg: "HS256", typ: "JWT" };
+    const encHeader = base64UrlEncode(JSON.stringify(header));
+    const encPayload = base64UrlEncode(JSON.stringify(payload));
+    const data = `${encHeader}.${encPayload}`;
+
+    const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(secret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+    );
+
+    const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data));
+    const encSignature = base64UrlEncode(signature);
+
+    return `${data}.${encSignature}`;
+}
+
+function base64UrlEncode(input) {
+    let source;
+    if (typeof input === "string") {
+        source = new TextEncoder().encode(input);
+    } else {
+        source = new Uint8Array(input);
+    }
+
+    return btoa(String.fromCharCode(...source))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
 }
