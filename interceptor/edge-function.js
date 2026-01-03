@@ -4,6 +4,16 @@ export async function onFetch(event) {
   const request = event.request;
   const url = new URL(request.url);
 
+  // 0. Static Asset & Content-Type Check
+  // User Requirement: filter staticExt with regex; only protect when html loaded.
+  const staticExtRegex = /\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|otf|map|mp4|webm)$/i;
+  const acceptHeader = request.headers.get("Accept") || "";
+
+  // If it's a static file OR not explicitly requesting HTML, bypass protection
+  if (staticExtRegex.test(url.pathname) || !acceptHeader.includes("text/html")) {
+      return fetch(request);
+  }
+
   // 1. Check Cookie
   const cookieHeader = request.headers.get("Cookie") || "";
   const cookies = parseCookies(cookieHeader);
