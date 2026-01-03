@@ -8,7 +8,11 @@ const CONFIG = {
     renewThreshold: 43200 // 12 hours (half of 24h)
 };
 
-export async function onFetch(event) {
+addEventListener('fetch', event => {
+    event.respondWith(handleRequest(event));
+});
+
+async function handleRequest(event) {
     try {
         const request = event.request;
         const url = new URL(request.url);
@@ -25,6 +29,7 @@ export async function onFetch(event) {
         const cookies = parseCookies(cookieHeader);
         const jwt = cookies[CONFIG.cookieName];
 
+        // Access environment variable. In EdgeOne, variables bound to the function are typically global.
         const SECRET = globalThis.JWT_SECRET || "CHANGE_ME_IN_PROD_SECRET_KEY_12345";
 
         if (jwt) {
@@ -57,8 +62,6 @@ export async function onFetch(event) {
                                     const newResponse = new Response(response.body, response);
 
                                     // Set new cookie
-                                    // Note: 86400 is hardcoded here to match Gateway default,
-                                    // ideally we parse exp but simple max-age is fine for now.
                                     const newCookie = `${CONFIG.cookieName}=${data.token}; Domain=${CONFIG.cookieDomain}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=86400`;
                                     newResponse.headers.append('Set-Cookie', newCookie);
 
@@ -78,6 +81,7 @@ export async function onFetch(event) {
                 }
             } catch (e) {
                 // Invalid JWT, continue to redirect
+                // console.error("JWT Verify Error", e);
             }
         }
 
@@ -91,7 +95,8 @@ export async function onFetch(event) {
     } catch (e) {
         return new Response(JSON.stringify({
             error: "Internal Error",
-            message: e.message || String(e)
+            message: e.message || String(e),
+            stack: e.stack
         }), {
             status: 500,
             headers: {
