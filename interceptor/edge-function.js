@@ -13,6 +13,9 @@ addEventListener('fetch', event => {
 });
 
 async function handleRequest(event) {
+    let flow = "Unknown";
+    let tokenStatus = "None";
+
     try {
         const request = event.request;
         const url = new URL(request.url);
@@ -21,7 +24,9 @@ async function handleRequest(event) {
         const staticExtRegex = /\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|otf|map|mp4|webm)$/i;
 
         if (staticExtRegex.test(url.pathname)) {
-            return fetch(request);
+            flow = "Static";
+            const response = await fetch(request);
+            return addDebugHeaders(response, flow, tokenStatus);
         }
 
         // 1. Check Cookie
@@ -29,19 +34,15 @@ async function handleRequest(event) {
         const cookies = parseCookies(cookieHeader);
         const jwt = cookies[CONFIG.cookieName];
 
-        // Access environment variable. In EdgeOne, variables bound to the function are typically global.
         const SECRET = globalThis.JWT_SECRET || "CHANGE_ME_IN_PROD_SECRET_KEY_12345";
 
         if (jwt) {
             try {
                 const payload = await verifyJWT(jwt, SECRET);
                 if (payload) {
+                    tokenStatus = "Valid";
                     const now = Date.now() / 1000;
                     const timeRemaining = payload.exp - now;
-
-                    // Logic:
-                    // Always log (background)
-                    // If < threshold, Renew (await)
 
                     const renewPromise = fetch(CONFIG.gatewayUrl + "/api/renew", {
                         method: "POST",
@@ -50,53 +51,58 @@ async function handleRequest(event) {
                     });
 
                     if (timeRemaining < CONFIG.renewThreshold) {
-                        // Renew needed: Wait for response to get new token
+                        flow = "Pass-Renew";
                         try {
                             const res = await renewPromise;
                             if (res.ok) {
                                 const data = await res.json();
                                 if (data.success && data.token) {
-                                    // Fetch origin content
+                                    tokenStatus = "Valid-Renewed";
                                     const response = await fetch(request);
-                                    // Clone response to add cookie
                                     const newResponse = new Response(response.body, response);
 
-                                    // Set new cookie
                                     const newCookie = `${CONFIG.cookieName}=${data.token}; Domain=${CONFIG.cookieDomain}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=86400`;
                                     newResponse.headers.append('Set-Cookie', newCookie);
 
-                                    return newResponse;
+                                    return addDebugHeaders(newResponse, flow, tokenStatus);
                                 }
                             }
                         } catch (err) {
-                            // If renew fails, we still allow access since token is valid locally
                             console.error("Renew failed", err);
+                            // Proceed without renewal
                         }
                     } else {
-                        // Just log in background
+                        flow = "Pass-Auth";
                         event.waitUntil(renewPromise.catch(err => console.error("Log failed", err)));
                     }
 
-                    return fetch(request);
+                    const response = await fetch(request);
+                    return addDebugHeaders(response, flow, tokenStatus);
+                } else {
+                    tokenStatus = "Invalid";
                 }
             } catch (e) {
-                // Invalid JWT, continue to redirect
+                tokenStatus = "Error";
                 // console.error("JWT Verify Error", e);
             }
         }
 
         // 2. Redirect to Gateway Auth
+        flow = "Redirect-Auth";
         const authUrl = new URL(CONFIG.gatewayUrl + "/auth");
         authUrl.searchParams.set("next", url.toString());
         authUrl.searchParams.set("hostname", url.hostname);
 
-        return Response.redirect(authUrl.toString(), 302);
+        const response = Response.redirect(authUrl.toString(), 302);
+        return addDebugHeaders(response, flow, tokenStatus);
 
     } catch (e) {
         return new Response(JSON.stringify({
             error: "Internal Error",
             message: e.message || String(e),
-            stack: e.stack
+            stack: e.stack,
+            debug_flow: flow,
+            debug_token: tokenStatus
         }), {
             status: 500,
             headers: {
@@ -105,6 +111,15 @@ async function handleRequest(event) {
             }
         });
     }
+}
+
+function addDebugHeaders(response, flow, tokenStatus) {
+    // Clone response to modify headers (Response objects are often immutable)
+    const newResponse = new Response(response.body, response);
+    newResponse.headers.set("X-Cpt-Flow", flow);
+    newResponse.headers.set("X-Cpt-Token-Status", tokenStatus);
+    newResponse.headers.set("X-Cpt-Origin-Status", response.status.toString());
+    return newResponse;
 }
 
 function parseCookies(header) {
