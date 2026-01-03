@@ -4,6 +4,8 @@ const CONFIG = {
     title: "LOOP CAPTCHA",
     gatewayUrl: "https://captcha.s3xyesia.xyz",
     cookieName: "_captcha_sess",
+    cookieDomain: ".s3xyesia.xyz",
+    renewThreshold: 43200 // 12 hours (half of 24h)
 };
 
 export async function onFetch(event) {
@@ -27,8 +29,51 @@ export async function onFetch(event) {
 
         if (jwt) {
             try {
-                const isValid = await verifyJWT(jwt, SECRET);
-                if (isValid) {
+                const payload = await verifyJWT(jwt, SECRET);
+                if (payload) {
+                    const now = Date.now() / 1000;
+                    const timeRemaining = payload.exp - now;
+
+                    // Logic:
+                    // Always log (background)
+                    // If < threshold, Renew (await)
+
+                    const renewPromise = fetch(CONFIG.gatewayUrl + "/api/renew", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ token: jwt })
+                    });
+
+                    if (timeRemaining < CONFIG.renewThreshold) {
+                        // Renew needed: Wait for response to get new token
+                        try {
+                            const res = await renewPromise;
+                            if (res.ok) {
+                                const data = await res.json();
+                                if (data.success && data.token) {
+                                    // Fetch origin content
+                                    const response = await fetch(request);
+                                    // Clone response to add cookie
+                                    const newResponse = new Response(response.body, response);
+
+                                    // Set new cookie
+                                    // Note: 86400 is hardcoded here to match Gateway default,
+                                    // ideally we parse exp but simple max-age is fine for now.
+                                    const newCookie = `${CONFIG.cookieName}=${data.token}; Domain=${CONFIG.cookieDomain}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=86400`;
+                                    newResponse.headers.append('Set-Cookie', newCookie);
+
+                                    return newResponse;
+                                }
+                            }
+                        } catch (err) {
+                            // If renew fails, we still allow access since token is valid locally
+                            console.error("Renew failed", err);
+                        }
+                    } else {
+                        // Just log in background
+                        event.waitUntil(renewPromise.catch(err => console.error("Log failed", err)));
+                    }
+
                     return fetch(request);
                 }
             } catch (e) {
@@ -70,7 +115,7 @@ function parseCookies(header) {
 async function verifyJWT(token, secret) {
     try {
         const [headerB64, payloadB64, signatureB64] = token.split('.');
-        if (!headerB64 || !payloadB64 || !signatureB64) return false;
+        if (!headerB64 || !payloadB64 || !signatureB64) return null;
 
         const data = `${headerB64}.${payloadB64}`;
 
@@ -90,14 +135,14 @@ async function verifyJWT(token, secret) {
             new TextEncoder().encode(data)
         );
 
-        if (!isValid) return false;
+        if (!isValid) return null;
 
         const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(payloadB64)));
-        if (payload.exp && Date.now() / 1000 > payload.exp) return false;
+        if (payload.exp && Date.now() / 1000 > payload.exp) return null;
 
-        return true;
+        return payload;
     } catch (e) {
-        return false;
+        return null;
     }
 }
 

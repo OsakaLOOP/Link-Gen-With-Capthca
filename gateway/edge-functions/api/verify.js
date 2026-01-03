@@ -1,7 +1,7 @@
 const CONFIG = {
   SESSION_TTL: 86400,
   COOKIE_NAME: '_captcha_sess',
-  COOKIE_DOMAIN: '.s3xyseia.xyz'
+  COOKIE_DOMAIN: '.s3xyesia.xyz'
 };
 
 export async function onRequest({ request }) {
@@ -16,9 +16,9 @@ export async function onRequest({ request }) {
   if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405, headers });
 
   const CapDB = globalThis.CAPTCHA_KV;
-  // Session storage replaced by JWT
+  const SessDB = globalThis.SESSION_KV;
 
-  if (!CapDB) return new Response(JSON.stringify({ error: "KV Bindings Missing" }), { status: 500, headers });
+  if (!CapDB || !SessDB) return new Response(JSON.stringify({ error: "KV Bindings Missing" }), { status: 500, headers });
 
   // Secret should be provided via environment variable
   const SECRET = globalThis.JWT_SECRET || "CHANGE_ME_IN_PROD_SECRET_KEY_12345";
@@ -40,11 +40,19 @@ export async function onRequest({ request }) {
         return new Response(JSON.stringify({ success: false, error: "Incorrect Answer" }), { status: 400, headers });
     }
 
-    // Generate JWT
+    // Generate Session ID & JWT
     const now = Math.floor(Date.now() / 1000);
     const exp = now + CONFIG.SESSION_TTL;
+    const sid = crypto.randomUUID();
 
-    const jwt = await signJWT({ valid: true, exp }, SECRET);
+    // Store in KV for logging/tracking
+    await SessDB.put(sid, JSON.stringify({
+      created: now,
+      last_seen: now,
+      user_agent: request.headers.get("User-Agent") || "unknown"
+    }), { expirationTtl: CONFIG.SESSION_TTL });
+
+    const jwt = await signJWT({ valid: true, sid, exp }, SECRET);
 
     const cookieHeader = `${CONFIG.COOKIE_NAME}=${jwt}; Domain=${CONFIG.COOKIE_DOMAIN}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${CONFIG.SESSION_TTL}`;
 
