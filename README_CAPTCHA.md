@@ -36,18 +36,18 @@ Create two KV Namespaces in EdgeOne:
 ### 3. Deploy Interceptor (Edge Function)
 
 1.  Navigate to `interceptor/`.
-2.  Create a new Edge Function in EdgeOne.
+2.  Create a new Global Edge Function in EdgeOne (NOT Pages Function).
 3.  Copy the content of `edge-function.js`.
-    *   *Note:* `config.js` is imported. For a single-file Edge Function deployment, you may need to bundle them or paste `config.js` content at the top of `edge-function.js`.
-4.  **Bind KV:** Bind `SESSION_KV` to the Function.
-5.  **Triggers:** Set the trigger rules (e.g., `*.s3xyseia.xyz/*`).
+    *   *Note:* The file `interceptor/edge-function.js` is self-contained.
+4.  **Configuration:**
+    *   **Environment Variables:** Add `JWT_SECRET` with your secret key.
+    *   **Triggers:** Set the trigger rules (e.g., `*.s3xyseia.xyz/*`) to intercept requests.
 
-## Configuration
+## Troubleshooting
 
-Edit `interceptor/config.js` to change:
-*   `title`: Page Title.
-*   `icon`: SVG Icon.
-*   `gatewayUrl`: URL of your Gateway API.
+If you encounter HTTP 500 errors:
+*   The `interceptor` code now returns a JSON response with error details and stack traces when an exception occurs. Check the response body for debugging information.
+*   Ensure `JWT_SECRET` is set as an environment variable in the Edge Function configuration.
 
 ## API Reference
 
