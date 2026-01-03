@@ -4,7 +4,7 @@ This project implements a CAPTCHA protection system using Tencent EdgeOne Functi
 
 ## Architecture
 
-1.  **Gateway (`captcha.s3xyesia.xyz`)**:
+1.  **Gateway (`captcha.s3xyseia.xyz`)**:
     *   Hosted on EdgeOne Pages.
     *   API Endpoints:
         *   `GET /api/captcha`: Returns a random puzzle from `CAPTCHA_KV`.
@@ -31,7 +31,7 @@ Create two KV Namespaces in EdgeOne:
 1.  Navigate to `gateway/`.
 2.  Deploy this directory to EdgeOne Pages (e.g., project `captcha-gateway`).
 3.  **Bind KV:** Bind `CAPTCHA_KV` and `SESSION_KV` to the Pages project with the same variable names.
-4.  **Domain:** Bind `captcha.s3xyesia.xyz`.
+4.  **Domain:** Bind `captcha.s3xyseia.xyz`.
 
 ### 3. Deploy Interceptor (Edge Function)
 

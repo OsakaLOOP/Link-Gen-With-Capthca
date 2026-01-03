@@ -2,9 +2,9 @@
 
 const CONFIG = {
     title: "LOOP CAPTCHA",
-    gatewayUrl: "https://captcha.s3xyesia.xyz",
+    gatewayUrl: "https://captcha.s3xyseia.xyz",
     cookieName: "_captcha_sess",
-    cookieDomain: ".s3xyesia.xyz",
+    cookieDomain: ".s3xyseia.xyz",
     renewThreshold: 43200 // 12 hours (half of 24h)
 };
 

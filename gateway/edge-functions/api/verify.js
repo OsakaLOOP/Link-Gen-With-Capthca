@@ -1,7 +1,7 @@
 const CONFIG = {
   SESSION_TTL: 86400,
   COOKIE_NAME: '_captcha_sess',
-  COOKIE_DOMAIN: '.s3xyesia.xyz'
+  COOKIE_DOMAIN: '.s3xyseia.xyz'
 };
 
 export async function onRequest({ request }) {

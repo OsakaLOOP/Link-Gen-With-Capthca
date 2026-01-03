@@ -1,7 +1,7 @@
 
 const CONFIG = {
     title: "LOOP CAPTCHA",
-    gatewayUrl: "https://captcha.s3xyesia.xyz",
+    gatewayUrl: "https://captcha.s3xyseia.xyz",
     cookieName: "_captcha_sess",
     icon: `
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" role="img" aria-label="captcha">
