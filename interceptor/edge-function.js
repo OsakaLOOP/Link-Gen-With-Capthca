@@ -1,6 +1,19 @@
-import { CONFIG } from './config.js';
+// import { CONFIG } from './config.js';
+
+const CONFIG = {
+    title: "LOOP CAPTCHA",
+    gatewayUrl: "https://captcha.s3xyesia.xyz",
+    cookieName: "_captcha_sess",
+    icon: `
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" role="img" aria-label="captcha">
+                    <rect x="3" y="7" width="18" height="13" rx="2" ry="2" stroke-linejoin="round"></rect>
+                    <path d="M7 7V5a5 5 0 0 1 10 0v2" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M9 13l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+                </svg>`
+};
 
 export async function onFetch(event) {
+    try{
   const request = event.request;
   const url = new URL(request.url);
 
@@ -36,7 +49,22 @@ export async function onFetch(event) {
   const html = getCaptchaPage(url.hostname);
   return new Response(html, {
     headers: { "Content-Type": "text/html; charset=utf-8" }
-  });
+  });}
+    catch (e) {
+        // Return a friendly HTML error page so Edge won't show its default message.
+        const errHtml = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${CONFIG.title} - Error</title>
+            <style>body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f3f4f6;color:#111;padding:24px} .card{max-width:720px;margin:48px auto;background:#fff;padding:24px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.06)} h1{margin:0 0 8px;font-size:20px} p{margin:0}</style></head><body>
+            <div class="card"> <div style="display:flex;align-items:center;gap:12px">${CONFIG.icon}<div><h1>${CONFIG.title} — Error</h1><p>${escapeHtml(e.message || String(e))}</p></div></div>
+            <p style="margin-top:12px;color:#6b7280;font-size:13px">If this persists, check the function logs.</p></div></body></html>`;
+
+        return new Response(errHtml, {
+            status: 500,
+            headers: {
+                "content-type": "text/html; charset=utf-8",
+                "access-control-allow-origin": "*"
+            }
+        });
+    }
 }
 
 function parseCookies(header) {
@@ -246,4 +274,14 @@ function getCaptchaPage(hostname) {
     </script>
 </body>
 </html>`;
+}
+
+function escapeHtml(str){
+    if(!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
