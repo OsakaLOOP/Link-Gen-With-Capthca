@@ -43,17 +43,8 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <style>
-/* CF Mock Styles Preserved but Cleaned for conflicts */
+/* Utilities */
 .bg-gradient-gray{background-image:-webkit-linear-gradient(top,#dedede,#ebebeb 3%,#ebebeb 97%,#dedede)}
-.cf-error-source:after{position:absolute;--bg-opacity:1;background-color:#fff;background-color:rgba(255,255,255,var(--bg-opacity));width:2.5rem;height:2.5rem;transform:translateX(-50%) translateY(0) rotate(45deg);content:"";bottom:-1.75rem;left:50%;box-shadow:0 0 4px 4px #dedede}
-@media screen and (max-width:720px){.cf-error-source:after{display:none}}
-.cf-icon-browser{background-image:url(data:image/svg+xml;utf8,%3Csvg%20id%3D%22a%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%2080.7362%22%3E%3Cpath%20d%3D%22M89.8358.1636H10.1642C4.6398.1636.1614%2C4.6421.1614%2C10.1664v60.4033c0%2C5.5244%2C4.4784%2C10.0028%2C10.0028%2C10.0028h79.6716c5.5244%2C0%2C10.0027-4.4784%2C10.0027-10.0028V10.1664c0-5.5244-4.4784-10.0028-10.0027-10.0028ZM22.8323%2C9.6103c1.9618%2C0%2C3.5522%2C1.5903%2C3.5522%2C3.5521s-1.5904%2C3.5522-3.5522%2C3.5522-3.5521-1.5904-3.5521-3.5522%2C1.5903-3.5521%2C3.5521-3.5521ZM12.8936%2C9.6103c1.9618%2C0%2C3.5522%2C1.5903%2C3.5522%2C3.5521s-1.5904%2C3.5522-3.5522%2C3.5522-3.5521-1.5904-3.5521-3.5522%2C1.5903-3.5521%2C3.5521-3.5521ZM89.8293%2C70.137H9.7312V24.1983h80.0981v45.9387ZM89.8293%2C16.1619H29.8524v-5.999h59.977v5.999Z%22%20style%3D%22fill%3A%20%23999%3B%22/%3E%3C/svg%3E)}
-.cf-icon-cloud{background-image:url(data:image/svg+xml;utf8,%3Csvg%20id%3D%22a%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20152%2078.9141%22%3E%3Cpath%20d%3D%22M132.2996%2C77.9927v-.0261c10.5477-.2357%2C19.0305-8.8754%2C19.0305-19.52%2C0-10.7928-8.7161-19.5422-19.4678-19.5422-2.9027%2C0-5.6471.6553-8.1216%2C1.7987C123.3261%2C18.6624%2C105.3419.9198%2C83.202.9198c-17.8255%2C0-32.9539%2C11.5047-38.3939%2C27.4899-3.0292-2.2755-6.7818-3.6403-10.8622-3.6403-10.0098%2C0-18.1243%2C8.1145-18.1243%2C0%2C1.7331.258%2C3.4033.7122%2C4.9905-.2899-.0168-.5769-.0442-.871-.0442-8.2805%2C0-14.993%2C6.7503-14.993%2C15.0772%2C0%2C8.2795%2C6.6381%2C14.994%2C14.8536%2C15.0701v.0054h.1069c.0109%2C0%2C.0215.0016.0325.0016s.0215-.0016.0325-.0016%22%20style%3D%22fill%3A%20%23999%3B%22/%3E%3C/svg%3E)}
-.cf-icon-server{background-image:url(data:image/svg+xml;utf8,%3Csvg%20id%3D%22a%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2095%2075%22%3E%3Cpath%20d%3D%22M94.0103%2C45.0775l-12.9885-38.4986c-1.2828-3.8024-4.8488-6.3624-8.8618-6.3619l-49.91.0065c-3.9995.0005-7.556%2C2.5446-8.8483%2C6.3295L1.0128%2C42.8363c-.3315.971-.501%2C1.9899-.5016%2C3.0159l-.0121%2C19.5737c-.0032%2C5.1667%2C4.1844%2C9.3569%2C9.3513%2C9.3569h75.2994c5.1646%2C0%2C9.3512-4.1866%2C9.3512-9.3512v-17.3649c0-1.0165-.1657-2.0262-.4907-2.9893ZM86.7988%2C65.3097c0%2C1.2909-1.0465%2C2.3374-2.3374%2C2.3374H9.9767c-1.2909%2C0-2.3374-1.0465-2.3374-2.3374v-18.1288c0-1.2909%2C1.0465-2.3374%2C2.3374-2.3374h74.4847c1.2909%2C0%2C2.3374%2C1.0465%2C2.3374%2C2.3374v18.1288Z%22%20style%3D%22fill%3A%20%23999%3B%22/%3E%3Ccircle%20cx%3D%2274.6349%22%20cy%3D%2256.1889%22%20r%3D%224.7318%22%20style%3D%22fill%3A%20%23999%3B%22/%3E%3Ccircle%20cx%3D%2259.1472%22%20cy%3D%2256.1889%22%20r%3D%224.7318%22%20style%3D%22fill%3A%20%23999%3B%22/%3E%3C/svg%3E)}
-.cf-icon-ok{background-image:url(data:image/svg+xml;utf8,%3Csvg%20id%3D%22a%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2048%2048%22%3E%3Ccircle%20cx%3D%2224%22%20cy%3D%2224%22%20r%3D%2223.4815%22%20style%3D%22fill%3A%20%239bca3e%3B%22/%3E%3Cpolyline%20points%3D%2217.453%2024.9841%2021.7183%2030.4504%2030.2076%2016.8537%22%20style%3D%22fill%3A%20none%3B%20stroke%3A%20%23fff%3B%20stroke-linecap%3A%20round%3B%20stroke-linejoin%3A%20round%3B%20stroke-width%3A%204px%3B%22/%3E%3C/svg%3E)}
-.cf-icon-error{background-image:url(data:image/svg+xml;utf8,%3Csvg%20id%3D%22a%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2047.9145%2047.9641%22%3E%3Ccircle%20cx%3D%2223.9572%22%20cy%3D%2223.982%22%20r%3D%2223.4815%22%20style%3D%22fill%3A%20%23bd2426%3B%22/%3E%3Cline%20x1%3D%2219.0487%22%20y1%3D%2219.0768%22%20x2%3D%2227.8154%22%20y2%3D%2228.8853%22%20style%3D%22fill%3A%20none%3B%20stroke%3A%20%23fff%3B%20stroke-linecap%3A%20round%3B%20stroke-linejoin%3A%20round%3B%20stroke-width%3A%203px%3B%22/%3E%3Cline%20x1%3D%2227.8154%22%20y1%3D%2219.0768%22%20x2%3D%2219.0487%22%20y2%3D%2228.8853%22%20style%3D%22fill%3A%20none%3B%20stroke%3A%20%23fff%3B%20stroke-linecap%3A%20round%3B%20stroke-linejoin%3A%20round%3B%20stroke-width%3A%203px%3B%22/%3E%3C/svg%3E)}
-
-/* Overrides/Utilities */
 .code-label{background-color:#d9d9d9;color:#313131;font-weight:500;border-radius:1.25rem;font-size:.75rem;line-height:4.5rem;padding:.25rem .5rem;height:4.5rem;white-space:nowrap;vertical-align:middle}
 .spoiler{background-color:#1f2937;color:#1f2937;border-radius:4px;padding:0 4px;cursor:help;transition:all 0.2s ease;user-select:none}
 .spoiler:hover{background-color:transparent;color:#9ca3af}
@@ -64,7 +55,7 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
 <body class="font-sans text-gray-700 antialiased">
 <div id="cf-wrapper">
     <div id="cf-error-details" class="p-0">
-        <header class="mx-auto pt-6 lg:px-8 w-[60rem] lg:w-full mb-2">
+        <header class="mx-auto pt-6 lg:px-8 max-w-4xl w-full mb-2">
             <h1 class="inline-block sm:block sm:mb-2 font-light text-[60px] lg:text-4xl text-[#404040] leading-tight mr-2">
                 <span class="inline-block">LOOP Captcha required</span>
                 <span class="code-label">Error code 200</span>
@@ -75,8 +66,8 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
             <div class="mt-2 text-gray-500"><span id="jst-time">Loading time...</span></div>
         </header>
 
-        <!-- Captcha Container: Horizontal Compact Design -->
-        <div class="w-[60rem] lg:w-full mx-auto bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-8">
+        <!-- Captcha Container: Narrower Width -->
+        <div class="max-w-4xl w-full mx-auto bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-8">
             <div class="flex flex-col md:flex-row h-full">
                 <!-- Left: Puzzle/Question Area -->
                 <div class="md:w-3/5 p-6 bg-gray-50 flex flex-col justify-center border-b md:border-b-0 md:border-r border-gray-200">
@@ -130,41 +121,60 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
         </div>
 
         <div class="my-6 bg-gradient-gray">
-            <div class="w-[60rem] lg:w-full mx-auto">
+            <div class="max-w-4xl w-full mx-auto">
                 <div class="flex flex-col md:flex-row md:px-8 text-center text-[#404040]">
                     <!-- Browser -->
-                    <div class="relative w-full md:w-1/3 py-8 md:text-left border-b md:border-b-0 md:border-r border-gray-300/50">
-                         <div class="relative mb-4 md:m-0 md:float-left md:mr-4">
-                            <span class="cf-icon-browser block md:hidden h-20 bg-center bg-no-repeat"></span>
-                            <span class="cf-icon-error w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4 hidden md:block"></span>
+                    <div class="relative w-full md:w-1/3 py-8 md:text-left border-b md:border-b-0 md:border-r border-gray-300/50 flex flex-col items-center md:items-start">
+                         <div class="mb-4 h-16 w-full flex justify-center md:justify-start">
+                             <!-- Inline SVG Browser Icon -->
+                            <svg class="h-16 w-auto text-gray-400" viewBox="0 0 100 80" fill="currentColor">
+                                <path d="M89.8 0.2H10.2C4.6 0.2 0.2 4.6 0.2 10.2v60.4c0 5.5 4.5 10 10 10h79.7c5.5 0 10-4.5 10-10V10.2c0-5.5-4.5-10-10-10zM22.8 9.6c2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6-3.6-1.6-3.6-3.6 1.6-3.6 3.6-3.6zM12.9 9.6c2 0 3.6 1.6 3.6 3.6s-1.6 3.6-3.6 3.6-3.6-1.6-3.6-3.6 1.6-3.6 3.6-3.6zM89.8 70.1H9.7V24.2h80.1v45.9zM89.8 16.2H29.9v-6h60v6z"/>
+                            </svg>
+                            <!-- Error X Icon Overlay -->
+                            <div class="absolute top-10 left-1/2 md:left-10 transform -translate-x-1/2 md:translate-x-0 bg-white rounded-full p-0.5">
+                                <svg class="w-8 h-8 text-red-600" fill="currentColor" viewBox="0 0 48 48"><circle cx="24" cy="24" r="23"/><path fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" d="M17 17l14 14M31 17L17 31"/></svg>
+                            </div>
                         </div>
-                         <div class="md:overflow-hidden">
-                             <span class="md:block w-full truncate font-light">You</span>
-                             <h3 class="md:inline-block mt-3 md:mt-0 text-xl text-gray-600 font-light" >Browser</h3>
+                        <div class="w-full">
+                             <span class="block w-full truncate font-light">You</span>
+                             <h3 class="block mt-1 text-xl text-gray-600 font-light" >Browser</h3>
                              <span class="block text-xl text-[#bd2426]">Mamba out</span>
                          </div>
                     </div>
                     <!-- Cloud -->
-                    <div class="relative w-full md:w-1/3 py-8 md:text-left border-b md:border-b-0 md:border-r border-gray-300/50">
-                         <div class="relative mb-4 md:m-0 md:float-left md:mr-4">
-                             <span class="cf-icon-cloud block md:hidden h-20 bg-center bg-no-repeat"></span>
-                             <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4 hidden md:block"></span>
+                    <div class="relative w-full md:w-1/3 py-8 md:text-left border-b md:border-b-0 md:border-r border-gray-300/50 flex flex-col items-center md:items-start md:pl-8">
+                         <div class="mb-4 h-16 w-full flex justify-center md:justify-start">
+                             <!-- Inline SVG Cloud Icon -->
+                             <svg class="h-16 w-auto text-gray-400" viewBox="0 0 152 79" fill="currentColor">
+                                 <path d="M132.3 78v-0.1c10.5-0.2 19-8.9 19-19.5 0-10.8-8.7-19.5-19.5-19.5-2.9 0-5.6 0.7-8.1 1.8C123.3 18.7 105.3 1 83.2 1c-17.8 0-33 11.5-38.4 27.5-3-2.3-6.8-3.6-10.9-3.6-10 0-18.1 8.1-18.1 18.1 0 1.7 0.3 3.4 0.7 5 -0.3 0-0.6 0-0.9 0-8.3 0-15 6.8-15 15.1 0 8.3 6.6 15 14.9 15.1h0.1c10.5-0.2 19-8.9 19-19.5 0-10.8-8.7-19.5-19.5-19.5-2.9 0-5.6 0.7-8.1 1.8z"/>
+                             </svg>
+                             <!-- Check Icon Overlay -->
+                            <div class="absolute top-10 left-1/2 md:left-10 transform -translate-x-1/2 md:translate-x-0 bg-white rounded-full p-0.5 ml-8 md:ml-0">
+                                <svg class="w-8 h-8 text-[#9bca3e]" fill="currentColor" viewBox="0 0 48 48"><circle cx="24" cy="24" r="23"/><path fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M17 25l5 5 9-14"/></svg>
+                            </div>
                          </div>
-                         <div class="md:overflow-hidden">
-                             <span class="md:block w-full truncate font-light">Tencent Edgeone</span>
-                             <h3 class="md:inline-block mt-3 md:mt-0 text-xl text-gray-600 font-light" >LOOP Cloud</h3>
+                         <div class="w-full">
+                             <span class="block w-full truncate font-light">Tencent Edgeone</span>
+                             <h3 class="block mt-1 text-xl text-gray-600 font-light" >LOOP Cloud</h3>
                              <span class="block text-xl text-[#9bca3e]">Request Intercpted</span>
                          </div>
                     </div>
                     <!-- Host -->
-                    <div class="relative w-full md:w-1/3 py-8 md:text-left">
-                         <div class="relative mb-4 md:m-0 md:float-left md:mr-4">
-                             <span class="cf-icon-server block md:hidden h-20 bg-center bg-no-repeat"></span>
-                             <span class="cf-icon-ok w-12 h-12 absolute left-1/2 md:left-auto md:right-0 md:top-0 -ml-6 -bottom-4 hidden md:block"></span>
+                    <div class="relative w-full md:w-1/3 py-8 md:text-left flex flex-col items-center md:items-start md:pl-8">
+                         <div class="mb-4 h-16 w-full flex justify-center md:justify-start">
+                             <!-- Inline SVG Server Icon -->
+                             <svg class="h-16 w-auto text-gray-400" viewBox="0 0 95 75" fill="currentColor">
+                                 <path d="M94 45.1l-13-38.5c-1.3-3.8-4.8-6.4-8.9-6.4L22.2 0.2c-4 0-7.6 2.5-8.8 6.3L1 42.8c-0.3 1-0.5 2-0.5 3l0 19.6c0 5.2 4.2 9.4 9.4 9.4h75.3c5.2 0 9.4-4.2 9.4-9.4V48.1c0-1-0.2-2-0.5-3zM86.8 65.3c0 1.3-1 2.3-2.3 2.3H10c-1.3 0-2.3-1-2.3-2.3V47.2c0-1.3 1-2.3 2.3-2.3h74.5c1.3 0 2.3 1 2.3 2.3v18.1z"/>
+                                 <circle cx="74.6" cy="56.2" r="4.7"/><circle cx="59.1" cy="56.2" r="4.7"/>
+                             </svg>
+                             <!-- Check Icon Overlay -->
+                            <div class="absolute top-10 left-1/2 md:left-10 transform -translate-x-1/2 md:translate-x-0 bg-white rounded-full p-0.5 ml-8 md:ml-0">
+                                <svg class="w-8 h-8 text-[#9bca3e]" fill="currentColor" viewBox="0 0 48 48"><circle cx="24" cy="24" r="23"/><path fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" d="M17 25l5 5 9-14"/></svg>
+                            </div>
                          </div>
-                         <div class="md:overflow-hidden">
-                             <span class="md:block w-full truncate font-light">${hostname}</span>
-                             <h3 class="md:inline-block mt-3 md:mt-0 text-xl text-gray-600 font-light" >Host</h3>
+                         <div class="w-full">
+                             <span class="block w-full truncate font-light">${hostname}</span>
+                             <h3 class="block mt-1 text-xl text-gray-600 font-light" >Host</h3>
                              <span class="block text-xl text-[#9bca3e]">Working</span>
                          </div>
                     </div>
@@ -172,7 +182,7 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
             </div>
         </div>
 
-        <div class="w-[60rem] lg:w-full mx-auto mb-8 lg:px-8">
+        <div class="max-w-4xl w-full mx-auto mb-8 lg:px-8">
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="w-full md:w-1/2 leading-relaxed">
                     <h2 class="text-3xl font-normal mb-4">What happened?</h2>
@@ -185,7 +195,7 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
             </div>
         </div>
 
-        <div class="w-[60rem] lg:w-full py-4 mx-auto text-center sm:text-left border-t border-gray-300">
+        <div class="max-w-4xl w-full py-4 mx-auto text-center sm:text-left border-t border-gray-300">
             <p class="text-[13px] text-gray-600">
                 <span class="block sm:inline sm:mr-2">Ray ID: <strong class="font-semibold text-black">${zoneID}</strong></span>
                 <span class="hidden sm:inline">&bull;</span>
