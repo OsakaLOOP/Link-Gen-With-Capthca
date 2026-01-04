@@ -3,9 +3,13 @@ const CONFIG = {
 };
 
 export async function onRequest({ request }) {
+  const origin = request.headers.get("Origin") || "";
+  const allowedOrigins = [origin]; // In a strict setup, validate against a whitelist. Here we mirror to allow all subdomains.
+
   const headers = {
     "Content-Type": "application/json; charset=utf-8",
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type"
   };
@@ -40,6 +44,12 @@ export async function onRequest({ request }) {
     // Generate New JWT
     const exp = now + CONFIG.SESSION_TTL;
     const newJwt = await signJWT({ ...payload, exp }, SECRET);
+
+    // Set-Cookie Header
+    // Note: EdgeOne Pages might sit behind a proxy, but we set standard attributes.
+    const cookieName = "_captcha_sess";
+    const cookieValue = `${cookieName}=${newJwt}; Domain=.s3xyseia.xyz; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${CONFIG.SESSION_TTL}`;
+    headers["Set-Cookie"] = cookieValue;
 
     return new Response(JSON.stringify({
       success: true,

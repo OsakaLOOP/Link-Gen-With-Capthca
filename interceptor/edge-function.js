@@ -76,45 +76,66 @@ async function handleRequest(event) {
                     const now = Date.now() / 1000;
                     const timeRemaining = payload.exp - now;
 
-                    // Logic:
-                    // Always log (background)
-                    // If < threshold, Renew (await)
+                    // Fetch origin content
+                    const response = await fetch(request, fetchOptions);
 
-                    const renewPromise = fetch(CONFIG.gatewayUrl + "/api/renew", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ token: jwt })
-                    });
+                    // Logic: Check if renewal injection is needed
+                    // 1. Time remaining is less than threshold
+                    // 2. Content-Type is HTML
 
-                    if (timeRemaining < CONFIG.renewThreshold) {
-                        // Renew needed: Wait for response to get new token
+                    const contentType = response.headers.get("Content-Type") || "";
+                    const isHtml = contentType.includes("text/html");
+
+                    if (timeRemaining < CONFIG.renewThreshold && isHtml) {
                         try {
-                            const res = await renewPromise;
-                            if (res.ok) {
-                                const data = await res.json();
-                                if (data.success && data.token) {
-                                    // Fetch origin content
-                                    const response = await fetch(request, fetchOptions);
-                                    // Clone response to add cookie
-                                    const newResponse = new Response(response.body, response);
+                            // Decode body (handles gzip automatically if fetch supports it, or raw stream)
+                            // Note: standard fetch(request) usually decompresses automatically.
+                            const text = await response.text();
 
-                                    // Set new cookie
-                                    const newCookie = `${CONFIG.cookieName}=${data.token}; Domain=${CONFIG.cookieDomain}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=86400`;
-                                    newResponse.headers.append('Set-Cookie', newCookie);
+                            // Inject Script
+                            // Use a simple replacement before </body>
+                            const injectionScript = `
+                            <script>
+                            (function() {
+                                var token = "${jwt}";
+                                fetch("${CONFIG.gatewayUrl}/api/renew", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ token: token }),
+                                    credentials: "include"
+                                }).then(r => {
+                                    if(r.ok) console.debug("Session renewed");
+                                }).catch(e => console.error("Session renew failed", e));
+                            })();
+                            </script>
+                            </body>
+                            `;
 
-                                    return newResponse;
-                                }
-                            }
+                            const modifiedBody = text.replace('</body>', injectionScript);
+
+                            // Create new Response
+                            const newResponse = new Response(modifiedBody, response);
+
+                            // CRITICAL: Remove Content-Encoding because we decoded the body
+                            // Remove Content-Length because size changed
+                            newResponse.headers.delete("Content-Encoding");
+                            newResponse.headers.delete("Content-Length");
+
+                            return newResponse;
+
                         } catch (err) {
-                            // If renew fails, we still allow access since token is valid locally
-                            console.error("Renew failed", err);
+                            console.error("Injection failed, returning original response", err);
+                            // If anything fails during reading/modifying, strictly we might have consumed the body?
+                            // In Service Workers, if we awaited response.text(), the original response body is used.
+                            // We can't easily fallback to the original stream if we already consumed it.
+                            // However, we are in a try block. If response.text() failed, we have nothing.
+                            // If response.text() succeeded but something else failed, we can use the text.
+                            // For safety, if we can't inject, we might have to serve the text without injection.
+                             return new Response("Internal Proxy Error during Renewal Injection", { status: 502 });
                         }
-                    } else {
-                        // Just log in background
-                        event.waitUntil(renewPromise.catch(err => console.error("Log failed", err)));
                     }
 
-                    return fetch(request, fetchOptions);
+                    return response;
                 }
             } catch (e) {
                 // Invalid JWT, continue to redirect
