@@ -53,11 +53,11 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
 .katex { font-size: 1.1em; }
 </style>
 </head>
-<body class="font-sans text-gray-700 antialiased">
-<div id="cf-wrapper">
-    <div id="cf-error-details" class="p-0">
+<body class="font-sans text-gray-700 antialiased h-screen flex flex-col overflow-hidden">
+<div id="cf-wrapper" class="flex-grow flex flex-col">
+    <div id="cf-error-details" class="p-0 flex flex-col flex-grow">
         <!-- Header: Responsive Wider Width (85rem) -->
-        <header class="mx-auto pt-6 px-4 lg:px-8 w-full max-w-[85rem] mb-8">
+        <header class="mx-auto pt-4 px-4 lg:px-8 w-full max-w-[85rem] mb-2 flex-shrink-0">
             <h1 class="inline-block sm:block sm:mb-2 font-light text-[60px] text-[#404040] leading-tight mr-2">
                 <span class="inline-block">LOOP Captcha required</span>
                 <span class="code-label">Error code 200</span>
@@ -65,16 +65,16 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
             <div class="text-base text-gray-600">
                 Visit <a href="https://www.s3xyseia.xyz" target="_blank" rel="noopener noreferrer" class="text-[#2f7bbf] hover:text-[#f68b1f]">www.s3xyseia.xyz</a> for guest guidelines.
             </div>
-            <div class="mt-2 text-gray-500 text-base"><span id="jst-time">Loading time...</span></div>
+            <div class="mt-1 text-gray-500 text-base"><span id="jst-time">Loading time...</span></div>
         </header>
 
-        <!-- Captcha Container Wrapper: Matches Header Width, but Card stays fixed -->
-        <div class="w-full max-w-[85rem] mx-auto mb-10 px-4 lg:px-0">
+        <!-- Captcha Container Wrapper -->
+        <div class="w-full max-w-[85rem] mx-auto mb-4 px-4 lg:px-0 flex-shrink-0">
             <!-- Captcha Card Inner: Fixed Size (max-w-4xl) -->
             <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transform scale-100 origin-top">
                 <div class="flex flex-col md:flex-row min-h-[300px]">
                     <!-- Left: Puzzle/Question Area (Magnified) -->
-                    <div class="md:w-3/5 p-10 bg-gray-50 flex flex-col justify-center border-b md:border-b-0 md:border-r border-gray-200">
+                    <div class="md:w-3/5 p-8 bg-gray-50 flex flex-col justify-center border-b md:border-b-0 md:border-r border-gray-200">
                         <div class="flex items-center justify-between mb-4 select-none">
                             <span class="text-sm font-bold text-gray-400 uppercase tracking-wider">Challenge</span>
                             <button onclick="loadCap()" class="text-blue-500 hover:text-blue-700 text-base flex items-center gap-1">
@@ -86,7 +86,7 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
                     </div>
 
                     <!-- Right: Controls Area (Magnified) -->
-                    <div class="md:w-2/5 p-10 bg-white flex flex-col justify-center gap-6">
+                    <div class="md:w-2/5 p-8 bg-white flex flex-col justify-center gap-6">
                          <!-- Badge -->
                         <div class="bg-gray-50 border border-gray-200 rounded p-3 flex justify-between items-center select-none shadow-sm h-20">
                             <div class="flex items-center gap-4">
@@ -123,11 +123,11 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
         </div>
 
         <!-- Status Panel: Centered Content, Wider (85rem) -->
-        <div class="my-6 bg-gradient-gray">
+        <div class="my-4 bg-gradient-gray flex-shrink-0">
             <div class="w-full max-w-[85rem] mx-auto px-4 lg:px-0">
                 <div class="flex flex-col md:flex-row text-center text-[#404040]">
                     <!-- Browser -->
-                    <div class="relative w-full md:w-1/3 py-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-300/50">
+                    <div class="relative w-full md:w-1/3 py-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-300/50">
                          <div class="mb-4 h-24 w-full flex justify-center relative">
                              <!-- Icon -->
                             <svg class="h-20 w-auto text-gray-400" viewBox="0 0 100 80" fill="currentColor">
@@ -143,9 +143,11 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
                              <h3 class="block mt-1 text-xl text-gray-600 font-light" >Browser</h3>
                              <span class="block text-xl text-[#bd2426]">Mamba out</span>
                          </div>
+                         <!-- Pointer/Arrow -->
+                         <div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-5 h-5 bg-[#ebebeb] rotate-45 border-r border-b border-transparent shadow-[2px_2px_2px_-1px_rgba(0,0,0,0.1)] z-10"></div>
                     </div>
                     <!-- Cloud -->
-                    <div class="relative w-full md:w-1/3 py-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-300/50">
+                    <div class="relative w-full md:w-1/3 py-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-300/50">
                          <div class="mb-4 h-24 w-full flex justify-center relative">
                              <!-- Icon -->
                              <svg class="h-20 w-auto text-gray-400" viewBox="0 0 640 512" fill="currentColor">
@@ -163,7 +165,7 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
                          </div>
                     </div>
                     <!-- Host -->
-                    <div class="relative w-full md:w-1/3 py-8 flex flex-col items-center justify-center">
+                    <div class="relative w-full md:w-1/3 py-6 flex flex-col items-center justify-center">
                          <div class="mb-4 h-24 w-full flex justify-center relative">
                              <!-- Icon -->
                              <svg class="h-20 w-auto text-gray-400" viewBox="0 0 95 75" fill="currentColor">
@@ -186,21 +188,21 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
         </div>
 
         <!-- FAQ: Wider (85rem) -->
-        <div class="w-full max-w-[85rem] mx-auto mb-8 px-4 lg:px-8">
+        <div class="w-full max-w-[85rem] mx-auto mb-4 px-4 lg:px-8 flex-shrink-0">
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="w-full md:w-1/2 leading-relaxed">
-                    <h2 class="text-3xl font-normal mb-4">What happened?</h2>
+                    <h2 class="text-3xl font-normal mb-2">What happened?</h2>
                     <p class="text-[15px]">Robots/Low-sanity commonalty should stay out.</p>
                 </div>
                 <div class="w-full md:w-1/2 leading-relaxed">
-                    <h2 class="text-3xl font-normal mb-4">What can I do?</h2>
+                    <h2 class="text-3xl font-normal mb-2">What can I do?</h2>
                     <p class="text-[15px]">Do the captcha to prove you are human (and welcome or not).</p>
                 </div>
             </div>
         </div>
 
-        <!-- Footer: Wider (85rem) -->
-        <div class="w-full max-w-[85rem] py-4 mx-auto text-center border-t border-gray-300 px-4 lg:px-0">
+        <!-- Footer: Fixed at bottom via flex-grow/mt-auto -->
+        <div class="mt-auto w-full max-w-[85rem] py-4 mx-auto text-center border-t border-gray-300 px-4 lg:px-0 bg-white">
             <p class="text-[13px] text-gray-600">
                 <span class="inline-block mr-2">Ray ID: <strong class="font-semibold text-black">${zoneID}</strong></span>
                 <span class="inline-block mr-2">&bull;</span>
