@@ -16,8 +16,29 @@ async function handleRequest(event) {
     try {
         const request = event.request;
         const url = new URL(request.url);
+
+        // Prepare headers for origin fetch (strip auth cookie)
+        const originHeaders = new Headers(request.headers);
+        const cookieHeader = originHeaders.get("Cookie");
+        if (cookieHeader) {
+            const cookies = cookieHeader.split(';');
+            const filteredCookies = cookies
+                .map(c => c.trim())
+                .filter(c => {
+                    const name = c.split('=')[0];
+                    return name !== CONFIG.cookieName;
+                });
+
+            if (filteredCookies.length > 0) {
+                originHeaders.set("Cookie", filteredCookies.join('; '));
+            } else {
+                originHeaders.delete("Cookie");
+            }
+        }
+
         const fetchOptions = {
             redirect: 'manual', // 手动处理重定向，保留 Upstream 的 Set-Cookie
+            headers: originHeaders,
             eo: {
                 timeoutSetting: {
                     connectTimeout: 30000, // 30s
