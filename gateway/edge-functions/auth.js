@@ -15,17 +15,23 @@ export async function onRequest({ request }) {
   const url = new URL(request.url);
   const rawHostname = url.searchParams.get('hostname') || url.hostname;
   const hostname = rawHostname.replace(/[<>"'&]/g, ""); // Basic XSS prevention
-  const clientIP = request.headers.get("EO-Client-IP") || "1.1.1.1";
-  const zoneID = request.headers.get("EO-Zone-ID") || "UNKNOWN";
 
-  const html = getCaptchaPage(hostname, clientIP, zoneID);
+  // Use passed query params for Ray ID and IP, falling back only if missing
+  const rawRayId = url.searchParams.get('rayid') || "UNKNOWN";
+  const rawClientIP = url.searchParams.get('ip') || "UNKNOWN";
+
+  // Sanitize inputs
+  const rayId = rawRayId.replace(/[<>"'&]/g, "");
+  const clientIP = rawClientIP.replace(/[<>"'&]/g, "");
+
+  const html = getCaptchaPage(hostname, clientIP, rayId);
 
   return new Response(html, {
     headers: { "Content-Type": "text/html; charset=utf-8" }
   });
 }
 
-function getCaptchaPage(hostname, clientIP, zoneID) {
+function getCaptchaPage(hostname, clientIP, rayId) {
   return `<!DOCTYPE html>
 <!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
 <!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->
@@ -202,7 +208,7 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
         <!-- Footer: Wider (80rem) -->
         <div class="w-full max-w-[80rem] py-4 mx-auto text-center border-t border-gray-300 px-4 lg:px-0">
             <p class="text-[13px] text-gray-600">
-                <span class="inline-block mr-2">Ray ID: <strong class="font-semibold text-black">${zoneID}</strong></span>
+                <span class="inline-block mr-2">Ray ID: <strong class="font-semibold text-black">${rayId}</strong></span>
                 <span class="inline-block mr-2">&bull;</span>
                 <span id="cf-footer-item-ip" class="inline-block mr-2">
                     Your IP:
