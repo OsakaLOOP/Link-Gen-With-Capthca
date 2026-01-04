@@ -16,18 +16,29 @@ async function handleRequest(event) {
     try {
         const request = event.request;
         const url = new URL(request.url);
+        const fetchOptions = {
+            redirect: 'manual', // 手动处理重定向，保留 Upstream 的 Set-Cookie
+            eo: {
+                timeoutSetting: {
+                    connectTimeout: 30000, // 30s
+                    readTimeout: 60000,    // 60s (流媒体/API长轮询)
+                    writeTimeout: 30000    // 30s
+                }
+            }
+        };
 
         // 0. Static Asset & Content-Type Check
-        const staticExtRegex = /\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|otf|map|mp4|webm)$/i;
+        const staticExtRegex = /\.(css|js|mjs|map|png|jpg|jpeg|gif|svg|ico|webp|bmp|woff|woff2|ttf|eot|otf|mp4|webm|mp3|wav|ogg|flac|json|webmanifest|xml|txt|cur|wasm)$/i;
 
         if (staticExtRegex.test(url.pathname)) {
-            return fetch(request);
+            return fetch(request, fetchOptions);
         }
 
         // 1. Check Cookie
         const cookieHeader = request.headers.get("Cookie") || "";
         const cookies = parseCookies(cookieHeader);
         const jwt = cookies[CONFIG.cookieName];
+        
 
         // Access environment variable. In EdgeOne, variables bound to the function are typically global.
         const SECRET = globalThis.JWT_SECRET || "CHANGE_ME_IN_PROD_SECRET_KEY_12345";
@@ -57,7 +68,7 @@ async function handleRequest(event) {
                                 const data = await res.json();
                                 if (data.success && data.token) {
                                     // Fetch origin content
-                                    const response = await fetch(request);
+                                    const response = await fetch(request, fetchOptions);
                                     // Clone response to add cookie
                                     const newResponse = new Response(response.body, response);
 
@@ -77,7 +88,7 @@ async function handleRequest(event) {
                         event.waitUntil(renewPromise.catch(err => console.error("Log failed", err)));
                     }
 
-                    return fetch(request);
+                    return fetch(request, fetchOptions);
                 }
             } catch (e) {
                 // Invalid JWT, continue to redirect
