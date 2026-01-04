@@ -57,6 +57,8 @@ function getCaptchaPage(hostname, clientIP, rayId) {
 .spoiler:hover{background-color:transparent;color:#9ca3af}
 .hljs { background: transparent !important; padding: 0 !important; }
 .katex { font-size: 1.1em; }
+/* Make injected code-block wrappers span side-to-side within the question column */
+#qStr .my-4 { margin-left: -2rem; margin-right: -2rem; padding-left: 2rem; padding-right: 2rem; box-sizing: border-box; }
 </style>
 </head>
 <body class="font-sans text-gray-700 antialiased h-screen flex flex-col overflow-hidden">
@@ -80,7 +82,7 @@ function getCaptchaPage(hostname, clientIP, rayId) {
             <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transform scale-100 origin-top">
                 <div class="flex flex-col md:flex-row min-h-[300px]">
                     <!-- Left: Puzzle/Question Area (Magnified) -->
-                    <div class="md:w-3/5 p-8 bg-gray-50 flex flex-col justify-center border-b md:border-b-0 md:border-r border-gray-200">
+                    <div class="md:w-3/5 p-8 bg-gray-50 flex flex-col justify-top border-b md:border-b-0 md:border-r border-gray-200">
                         <div class="flex items-center justify-between mb-4 select-none">
                             <span class="text-sm font-bold text-gray-400 uppercase tracking-wider">Challenge</span>
                             <button onclick="loadCap()" class="text-blue-500 hover:text-blue-700 text-base flex items-center gap-1">
@@ -194,7 +196,7 @@ function getCaptchaPage(hostname, clientIP, rayId) {
         </div>
 
         <!-- FAQ: Wider (80rem) -->
-        <div class="w-full max-w-[80rem] mx-auto mb-4 px-4 lg:px-8 flex-shrink-0">
+        <div class="w-full max-w-[80rem] mx-auto mb-8 px-4 lg:px-8 flex-shrink-0">
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="w-full md:w-1/2 leading-relaxed">
                     <h2 class="text-3xl font-normal mb-2">What happened?</h2>
@@ -305,14 +307,15 @@ function getCaptchaPage(hostname, clientIP, rayId) {
 
             raw = raw.replace(/__CODE_BLOCK_(\\d+)__/g, (match, index) => {
                 const item = codeBlocks[index];
-                return \`<div class="my-4 bg-[#282c34] rounded border border-gray-700 shadow-inner overflow-hidden text-left group relative select-none text-base">
-                    <div class="flex gap-2 px-3 py-2 border-b border-gray-700/50 bg-[#21252b]">
-                        <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
-                        <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
-                        <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
-                    </div>
-                    <div class="p-4 overflow-x-auto"><pre><code class="\${item.lang}">\${item.code}</code></pre></div>
-                </div>\`;
+                    // Prepend a line break before code block to ensure separation from previous content
+                    return \`<br><div class="my-4 bg-[#282c34] rounded border border-gray-700 shadow-inner overflow-hidden text-left group relative select-none text-base">
+                        <div class="flex gap-2 px-3 py-2 border-b border-gray-700/50 bg-[#21252b]">
+                            <div class="w-2.5 h-2.5 rounded-full bg-red-500/80"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></div>
+                            <div class="w-2.5 h-2.5 rounded-full bg-green-500/80"></div>
+                        </div>
+                        <div class="p-4 overflow-x-auto"><pre><code class="\${item.lang}">\${item.code}</code></pre></div>
+                    </div>\`;
             });
 
             qStr.innerHTML = raw;
