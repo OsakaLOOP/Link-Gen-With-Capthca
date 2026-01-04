@@ -56,8 +56,8 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
 <body class="font-sans text-gray-700 antialiased">
 <div id="cf-wrapper">
     <div id="cf-error-details" class="p-0">
-        <!-- Header: Responsive Wider Width (85rem) -->
-        <header class="mx-auto pt-6 px-4 lg:px-8 w-full max-w-[85rem] mb-8">
+        <!-- Header: Responsive Wider Width (80rem) -->
+        <header class="mx-auto pt-6 px-4 lg:px-8 w-full max-w-[80rem] mb-8">
             <h1 class="inline-block sm:block sm:mb-2 font-light text-[60px] text-[#404040] leading-tight mr-2">
                 <span class="inline-block">LOOP Captcha required</span>
                 <span class="code-label">Error code 200</span>
@@ -69,7 +69,7 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
         </header>
 
         <!-- Captcha Container Wrapper: Matches Header Width, but Card stays fixed -->
-        <div class="w-full max-w-[85rem] mx-auto mb-10 px-4 lg:px-0">
+        <div class="w-full max-w-[80rem] mx-auto mb-10 px-4 lg:px-0">
             <!-- Captcha Card Inner: Fixed Size (max-w-4xl) -->
             <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transform scale-100 origin-top">
                 <div class="flex flex-col md:flex-row min-h-[300px]">
@@ -91,7 +91,7 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
                         <div class="bg-gray-50 border border-gray-200 rounded p-3 flex justify-between items-center select-none shadow-sm h-20">
                             <div class="flex items-center gap-4">
                                 <div class="w-8 h-8 bg-white border-2 border-gray-300 rounded-sm flex items-center justify-center">
-                                    <svg class="w-5 h-5 text-green-500 animate-[bounce_0.5s_ease-out]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 text-green-500 delay-500 animate-[bounce_1.5s_ease-out]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
                                     </svg>
                                 </div>
@@ -122,9 +122,9 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
             </div>
         </div>
 
-        <!-- Status Panel: Centered Content, Wider (85rem) -->
+        <!-- Status Panel: Centered Content, Wider (80rem) -->
         <div class="my-6 bg-gradient-gray">
-            <div class="w-full max-w-[85rem] mx-auto px-4 lg:px-0">
+            <div class="w-full max-w-[80rem] mx-auto px-4 lg:px-0">
                 <div class="flex flex-col md:flex-row text-center text-[#404040]">
                     <!-- Browser -->
                     <div class="relative w-full md:w-1/3 py-8 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-300/50">
@@ -185,8 +185,8 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
             </div>
         </div>
 
-        <!-- FAQ: Wider (85rem) -->
-        <div class="w-full max-w-[85rem] mx-auto mb-8 px-4 lg:px-8">
+        <!-- FAQ: Wider (80rem) -->
+        <div class="w-full max-w-[80rem] mx-auto mb-8 px-4 lg:px-8">
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="w-full md:w-1/2 leading-relaxed">
                     <h2 class="text-3xl font-normal mb-4">What happened?</h2>
@@ -199,8 +199,8 @@ function getCaptchaPage(hostname, clientIP, zoneID) {
             </div>
         </div>
 
-        <!-- Footer: Wider (85rem) -->
-        <div class="w-full max-w-[85rem] py-4 mx-auto text-center border-t border-gray-300 px-4 lg:px-0">
+        <!-- Footer: Wider (80rem) -->
+        <div class="w-full max-w-[80rem] py-4 mx-auto text-center border-t border-gray-300 px-4 lg:px-0">
             <p class="text-[13px] text-gray-600">
                 <span class="inline-block mr-2">Ray ID: <strong class="font-semibold text-black">${zoneID}</strong></span>
                 <span class="inline-block mr-2">&bull;</span>
