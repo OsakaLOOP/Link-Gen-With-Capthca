@@ -19,7 +19,9 @@ async function handleRequest(event) {
 
         // Prepare headers for origin fetch (strip auth cookie)
         const originHeaders = new Headers(request.headers);
+        originHeaders.delete("Host");
         const originCookieHeader = originHeaders.get("Cookie");
+        
         if (originCookieHeader) {
             const cookies = originCookieHeader.split(';');
             const filteredCookies = cookies
