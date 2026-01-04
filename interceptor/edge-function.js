@@ -20,6 +20,9 @@ async function handleRequest(event) {
         // Prepare headers for origin fetch (strip auth cookie)
         const originHeaders = new Headers(request.headers);
         originHeaders.delete("Host");
+        originHeaders.delete("Origin");
+        originHeaders.delete("Referer");
+        // CRSF avoidance
         const originCookieHeader = originHeaders.get("Cookie");
         
         if (originCookieHeader) {

@@ -196,7 +196,7 @@ function getCaptchaPage(hostname, clientIP, rayId) {
         </div>
 
         <!-- FAQ: Wider (80rem) -->
-        <div class="w-full max-w-[80rem] mx-auto mb-8 px-4 lg:px-8 flex-shrink-0">
+        <div class="w-full max-w-[80rem] mx-auto mt-8 mb-4 px-4 lg:px-8 flex-shrink-0">
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="w-full md:w-1/2 leading-relaxed">
                     <h2 class="text-3xl font-normal mb-2">What happened?</h2>
