@@ -92,10 +92,13 @@ async function handleRequest(event) {
                             // Note: standard fetch(request) usually decompresses automatically.
                             const text = await response.text();
 
+                            // Generate Nonce for CSP
+                            const nonce = generateNonce();
+
                             // Inject Script
                             // Use a simple replacement before </body>
                             const injectionScript = `
-                            <script>
+                            <script nonce="${nonce}">
                             (function() {
                                 var token = "${jwt}";
                                 fetch("${CONFIG.gatewayUrl}/api/renew", {
@@ -120,6 +123,17 @@ async function handleRequest(event) {
                             // Remove Content-Length because size changed
                             newResponse.headers.delete("Content-Encoding");
                             newResponse.headers.delete("Content-Length");
+
+                            // CSP Modification: Inject Nonce instead of removing headers
+                            const cspHeader = newResponse.headers.get("Content-Security-Policy");
+                            const cspReportHeader = newResponse.headers.get("Content-Security-Policy-Report-Only");
+
+                            if (cspHeader) {
+                                newResponse.headers.set("Content-Security-Policy", injectNonceToCsp(cspHeader, nonce));
+                            }
+                            if (cspReportHeader) {
+                                newResponse.headers.set("Content-Security-Policy-Report-Only", injectNonceToCsp(cspReportHeader, nonce));
+                            }
 
                             return newResponse;
 
@@ -236,4 +250,32 @@ function generateRayId() {
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
+}
+
+function generateNonce() {
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    return btoa(String.fromCharCode(...array)).replace(/[^a-zA-Z0-9]/g, '');
+}
+
+function injectNonceToCsp(csp, nonce) {
+    // 1. Check if script-src exists
+    const scriptSrcRegex = /(script-src\s+[^;]+)/i;
+
+    if (scriptSrcRegex.test(csp)) {
+        // Append nonce to script-src
+        return csp.replace(scriptSrcRegex, `$1 'nonce-${nonce}'`);
+    }
+
+    // 2. If no script-src, check default-src
+    const defaultSrcRegex = /(default-src\s+[^;]+)/i;
+    if (defaultSrcRegex.test(csp)) {
+         // Append nonce to default-src (valid fallback)
+        return csp.replace(defaultSrcRegex, `$1 'nonce-${nonce}'`);
+    }
+
+    // 3. If neither, we don't inject.
+    // If the CSP doesn't restrict scripts (no default-src or script-src), we don't need a nonce.
+    // If it's empty, we leave it empty.
+    return csp;
 }
