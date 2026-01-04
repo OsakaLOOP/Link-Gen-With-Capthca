@@ -76,45 +76,80 @@ async function handleRequest(event) {
                     const now = Date.now() / 1000;
                     const timeRemaining = payload.exp - now;
 
-                    // Logic:
-                    // Always log (background)
-                    // If < threshold, Renew (await)
+                    // Fetch origin content
+                    const response = await fetch(request, fetchOptions);
 
-                    const renewPromise = fetch(CONFIG.gatewayUrl + "/api/renew", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ token: jwt })
-                    });
+                    // Logic: Check if renewal injection is needed
+                    // 1. Time remaining is less than threshold
+                    // 2. Content-Type is HTML
 
-                    if (timeRemaining < CONFIG.renewThreshold) {
-                        // Renew needed: Wait for response to get new token
+                    const contentType = response.headers.get("Content-Type") || "";
+                    const isHtml = contentType.includes("text/html");
+
+                    if (timeRemaining < CONFIG.renewThreshold && isHtml) {
                         try {
-                            const res = await renewPromise;
-                            if (res.ok) {
-                                const data = await res.json();
-                                if (data.success && data.token) {
-                                    // Fetch origin content
-                                    const response = await fetch(request, fetchOptions);
-                                    // Clone response to add cookie
-                                    const newResponse = new Response(response.body, response);
+                            // Decode body (handles gzip automatically if fetch supports it, or raw stream)
+                            // Note: standard fetch(request) usually decompresses automatically.
+                            const text = await response.text();
 
-                                    // Set new cookie
-                                    const newCookie = `${CONFIG.cookieName}=${data.token}; Domain=${CONFIG.cookieDomain}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=86400`;
-                                    newResponse.headers.append('Set-Cookie', newCookie);
+                            // Generate Nonce for CSP
+                            const nonce = generateNonce();
 
-                                    return newResponse;
-                                }
+                            // Inject Script
+                            // Use a simple replacement before </body>
+                            const injectionScript = `
+                            <script nonce="${nonce}">
+                            (function() {
+                                var token = "${jwt}";
+                                fetch("${CONFIG.gatewayUrl}/api/renew", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ token: token }),
+                                    credentials: "include"
+                                }).then(r => {
+                                    if(r.ok) console.debug("Session renewed");
+                                }).catch(e => console.error("Session renew failed", e));
+                            })();
+                            </script>
+                            </body>
+                            `;
+
+                            const modifiedBody = text.replace('</body>', injectionScript);
+
+                            // Create new Response
+                            const newResponse = new Response(modifiedBody, response);
+
+                            // CRITICAL: Remove Content-Encoding because we decoded the body
+                            // Remove Content-Length because size changed
+                            newResponse.headers.delete("Content-Encoding");
+                            newResponse.headers.delete("Content-Length");
+
+                            // CSP Modification: Inject Nonce instead of removing headers
+                            const cspHeader = newResponse.headers.get("Content-Security-Policy");
+                            const cspReportHeader = newResponse.headers.get("Content-Security-Policy-Report-Only");
+
+                            if (cspHeader) {
+                                newResponse.headers.set("Content-Security-Policy", injectNonceToCsp(cspHeader, nonce));
                             }
+                            if (cspReportHeader) {
+                                newResponse.headers.set("Content-Security-Policy-Report-Only", injectNonceToCsp(cspReportHeader, nonce));
+                            }
+
+                            return newResponse;
+
                         } catch (err) {
-                            // If renew fails, we still allow access since token is valid locally
-                            console.error("Renew failed", err);
+                            console.error("Injection failed, returning original response", err);
+                            // If anything fails during reading/modifying, strictly we might have consumed the body?
+                            // In Service Workers, if we awaited response.text(), the original response body is used.
+                            // We can't easily fallback to the original stream if we already consumed it.
+                            // However, we are in a try block. If response.text() failed, we have nothing.
+                            // If response.text() succeeded but something else failed, we can use the text.
+                            // For safety, if we can't inject, we might have to serve the text without injection.
+                             return new Response("Internal Proxy Error during Renewal Injection", { status: 502 });
                         }
-                    } else {
-                        // Just log in background
-                        event.waitUntil(renewPromise.catch(err => console.error("Log failed", err)));
                     }
 
-                    return fetch(request, fetchOptions);
+                    return response;
                 }
             } catch (e) {
                 // Invalid JWT, continue to redirect
@@ -215,4 +250,32 @@ function generateRayId() {
         const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
+}
+
+function generateNonce() {
+    const array = new Uint8Array(16);
+    crypto.getRandomValues(array);
+    return btoa(String.fromCharCode(...array)).replace(/[^a-zA-Z0-9]/g, '');
+}
+
+function injectNonceToCsp(csp, nonce) {
+    // 1. Check if script-src exists
+    const scriptSrcRegex = /(script-src\s+[^;]+)/i;
+
+    if (scriptSrcRegex.test(csp)) {
+        // Append nonce to script-src
+        return csp.replace(scriptSrcRegex, `$1 'nonce-${nonce}'`);
+    }
+
+    // 2. If no script-src, check default-src
+    const defaultSrcRegex = /(default-src\s+[^;]+)/i;
+    if (defaultSrcRegex.test(csp)) {
+         // Append nonce to default-src (valid fallback)
+        return csp.replace(defaultSrcRegex, `$1 'nonce-${nonce}'`);
+    }
+
+    // 3. If neither, we don't inject.
+    // If the CSP doesn't restrict scripts (no default-src or script-src), we don't need a nonce.
+    // If it's empty, we leave it empty.
+    return csp;
 }
