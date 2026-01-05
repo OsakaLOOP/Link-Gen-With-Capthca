@@ -21,7 +21,8 @@ export async function onRequest({ request }) {
   if (!CapDB || !SessDB) return new Response(JSON.stringify({ error: "KV Bindings Missing" }), { status: 500, headers });
 
   // Secret should be provided via environment variable
-  const SECRET = globalThis.JWT_SECRET || "CHANGE_ME_IN_PROD_SECRET_KEY_12345";
+  const SECRET = env.JWT_SECRET;
+  if (!SECRET) return new Response(JSON.stringify({ error: "Server Misconfiguration" }), { status: 500, headers });
 
   try {
     const body = await request.json();
