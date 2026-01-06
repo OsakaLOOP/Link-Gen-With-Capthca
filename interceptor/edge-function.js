@@ -67,7 +67,7 @@ async function handleRequest(event) {
         
 
         // Access environment variable. In EdgeOne, variables bound to the function are typically global.
-        const SECRET = 'zundamon0721';
+        const SECRET = event.env.JWT_SECRET;
         if (!SECRET) {return new Response(JSON.stringify({ error: "Server Misconfiguration" }), { status: 500, headers: {
             "content-type": "application/json; charset=utf-8",
             "access-control-allow-origin": "*"
