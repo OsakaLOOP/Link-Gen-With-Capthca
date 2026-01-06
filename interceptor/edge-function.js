@@ -163,13 +163,26 @@ async function handleRequest(event) {
 
         // 2. Redirect to Gateway Auth
         const authUrl = new URL(CONFIG.gatewayUrl + "/auth");
-        const rayId = (typeof crypto !== 'undefined' && crypto.randomUUID && typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : generateRayId();
-        const clientIP = request.headers.get("EO-Client-IP") || "1.1.1.1";
+
+        // Extract EO Properties
+        // @ts-ignore
+        const eo = request.eo || {};
+        const geo = eo.geo || {};
+
+        const rayId = eo.uuid || request.headers.get("EO-LOG-UUID") || ((typeof crypto !== 'undefined' && crypto.randomUUID && typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : generateRayId());
+        const clientIP = eo.clientIp || request.headers.get("EO-Client-IP") || "1.1.1.1";
 
         authUrl.searchParams.set("next", url.toString());
         authUrl.searchParams.set("hostname", url.hostname);
         authUrl.searchParams.set("rayid", rayId);
         authUrl.searchParams.set("ip", clientIP);
+
+        if (geo.countryName) authUrl.searchParams.set("country", geo.countryName);
+        if (geo.regionName) authUrl.searchParams.set("region", geo.regionName);
+        if (geo.cityName) authUrl.searchParams.set("city", geo.cityName);
+        if (geo.latitude) authUrl.searchParams.set("lat", geo.latitude);
+        if (geo.longitude) authUrl.searchParams.set("long", geo.longitude);
+        if (geo.asn) authUrl.searchParams.set("asn", geo.asn);
 
         return Response.redirect(authUrl.toString(), 302);
 

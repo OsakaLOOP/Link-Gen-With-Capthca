@@ -24,14 +24,24 @@ export async function onRequest({ request }) {
   const rayId = rawRayId.replace(/[<>"'&]/g, "");
   const clientIP = rawClientIP.replace(/[<>"'&]/g, "");
 
-  const html = getCaptchaPage(hostname, clientIP, rayId);
+  // Geo Params with Sanitization
+  const geo = {
+      country: (url.searchParams.get('country') || "Unknown").replace(/[<>"'&]/g, ""),
+      region: (url.searchParams.get('region') || "Unknown").replace(/[<>"'&]/g, ""),
+      city: (url.searchParams.get('city') || "Unknown").replace(/[<>"'&]/g, ""),
+      lat: parseFloat(url.searchParams.get('lat')) || 0,
+      long: parseFloat(url.searchParams.get('long')) || 0,
+      asn: (url.searchParams.get('asn') || "Unknown").replace(/[<>"'&]/g, "")
+  };
+
+  const html = getCaptchaPage(hostname, clientIP, rayId, geo);
 
   return new Response(html, {
     headers: { "Content-Type": "text/html; charset=utf-8" }
   });
 }
 
-function getCaptchaPage(hostname, clientIP, rayId) {
+function getCaptchaPage(hostname, clientIP, rayId, geo) {
   return `<!DOCTYPE html>
 <!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]-->
 <!--[if IE 7]>    <html class="no-js ie7 oldie" lang="en-US"> <![endif]-->
@@ -49,6 +59,8 @@ function getCaptchaPage(hostname, clientIP, rayId) {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<!-- D3.js -->
+<script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
 /* Utilities */
 .bg-gradient-gray{background-image:-webkit-linear-gradient(top,#dedede,#ebebeb 3%,#ebebeb 97%,#dedede)}
@@ -64,8 +76,8 @@ function getCaptchaPage(hostname, clientIP, rayId) {
 <body class="font-sans text-gray-700 antialiased h-screen flex flex-col overflow-hidden">
 <div id="cf-wrapper" class="flex-grow flex flex-col">
     <div id="cf-error-details" class="p-0 flex flex-col flex-grow">
-        <!-- Header: Responsive Wider Width (85rem) -->
-        <header class="mx-auto pt-4 px-4 lg:px-8 w-full max-w-[85rem] mb-2 flex-shrink-0">
+        <!-- Header: Responsive Wider Width (90rem) -->
+        <header class="mx-auto pt-4 px-4 lg:px-8 w-full max-w-[90rem] mb-2 flex-shrink-0">
             <h1 class="inline-block sm:block sm:mb-2 font-light text-[60px] text-[#404040] leading-tight mr-2">
                 <span class="inline-block">LOOP Captcha required</span>
                 <span class="code-label">Error code 200</span>
@@ -76,12 +88,13 @@ function getCaptchaPage(hostname, clientIP, rayId) {
             <div class="mt-1 text-gray-500 text-base"><span id="jst-time">Loading time...</span></div>
         </header>
 
-        <!-- Captcha Container Wrapper -->
-        <div class="w-full max-w-[80rem] mx-auto mb-4 px-4 lg:px-0 flex-shrink-0">
-            <!-- Captcha Card Inner: Fixed Size (max-w-4xl) -->
-            <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transform scale-100 origin-top">
+        <!-- Main Content Area: Side-by-Side Flex Container -->
+        <div class="w-full max-w-[90rem] mx-auto mb-4 px-4 lg:px-0 flex-shrink-0 flex flex-col xl:flex-row gap-6 justify-center items-start">
+
+            <!-- Captcha Card: Fixed Size (max-w-4xl) -->
+            <div class="w-full max-w-4xl bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden transform scale-100 origin-top flex-shrink-0">
                 <div class="flex flex-col md:flex-row min-h-[300px]">
-                    <!-- Left: Puzzle/Question Area (Magnified) -->
+                    <!-- Left: Puzzle/Question Area -->
                     <div class="md:w-3/5 p-8 bg-gray-50 flex flex-col justify-top border-b md:border-b-0 md:border-r border-gray-200">
                         <div class="flex items-center justify-between mb-4 select-none">
                             <span class="text-sm font-bold text-gray-400 uppercase tracking-wider">Challenge</span>
@@ -93,7 +106,7 @@ function getCaptchaPage(hostname, clientIP, rayId) {
                         <div id="qStr" class="font-mono text-xl text-gray-800 break-words flex items-center leading-relaxed">Loading puzzle...</div>
                     </div>
 
-                    <!-- Right: Controls Area (Magnified) -->
+                    <!-- Right: Controls Area -->
                     <div class="md:w-2/5 p-8 bg-white flex flex-col justify-center gap-6">
                          <!-- Badge -->
                         <div class="bg-gray-50 border border-gray-200 rounded p-3 flex justify-between items-center select-none shadow-sm h-20">
@@ -128,11 +141,41 @@ function getCaptchaPage(hostname, clientIP, rayId) {
                     </div>
                 </div>
             </div>
+
+            <!-- New Geo Card -->
+            <div class="w-full xl:w-80 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden flex-shrink-0 p-4 flex flex-col items-center" style="min-height: 300px;">
+                <h3 class="text-lg font-medium text-gray-700 mb-2 w-full text-left border-b pb-2">Request Origin</h3>
+
+                <!-- Globe Container -->
+                <div id="globe-viz" class="w-full aspect-square relative flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden mb-3">
+                    <!-- D3 Globe will be rendered here -->
+                </div>
+
+                <!-- Info Table -->
+                <div class="w-full text-sm">
+                     <div class="flex justify-between py-1 border-b border-gray-100">
+                        <span class="text-gray-500">Country</span>
+                        <span class="font-medium text-gray-800 text-right truncate pl-2">${geo.country}</span>
+                    </div>
+                     <div class="flex justify-between py-1 border-b border-gray-100">
+                        <span class="text-gray-500">Region</span>
+                        <span class="font-medium text-gray-800 text-right truncate pl-2">${geo.region}</span>
+                    </div>
+                     <div class="flex justify-between py-1 border-b border-gray-100">
+                        <span class="text-gray-500">City</span>
+                        <span class="font-medium text-gray-800 text-right truncate pl-2">${geo.city}</span>
+                    </div>
+                    <div class="flex justify-between py-1 pt-2">
+                        <span class="text-gray-500">ASN</span>
+                        <span class="font-mono text-xs bg-gray-100 px-1 rounded text-gray-600">${geo.asn}</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Status Panel: Centered Content, Wider (85rem) -->
+        <!-- Status Panel: Centered Content, Wider (90rem) -->
         <div class="my-4 bg-gradient-gray flex-shrink-0">
-            <div class="w-full max-w-[80rem] mx-auto px-4 lg:px-0">
+            <div class="w-full max-w-[90rem] mx-auto px-4 lg:px-0">
                 <div class="flex flex-col md:flex-row text-center text-[#404040]">
                     <!-- Browser -->
                     <div class="relative w-full md:w-1/3 py-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-gray-300/50">
@@ -195,8 +238,8 @@ function getCaptchaPage(hostname, clientIP, rayId) {
             </div>
         </div>
 
-        <!-- FAQ: Wider (80rem) -->
-        <div class="w-full max-w-[80rem] mx-auto mt-8 mb-4 px-4 lg:px-8 flex-shrink-0">
+        <!-- FAQ: Wider (90rem) -->
+        <div class="w-full max-w-[90rem] mx-auto mt-8 mb-4 px-4 lg:px-8 flex-shrink-0">
             <div class="flex flex-col md:flex-row gap-8">
                 <div class="w-full md:w-1/2 leading-relaxed">
                     <h2 class="text-3xl font-normal mb-2">What happened?</h2>
@@ -210,7 +253,7 @@ function getCaptchaPage(hostname, clientIP, rayId) {
         </div>
 
         <!-- Footer: Fixed at bottom via flex-grow/mt-auto -->
-        <div class="mt-auto w-full max-w-[80rem] py-4 mx-auto text-center border-t border-gray-300 px-4 lg:px-0 bg-white">
+        <div class="mt-auto w-full max-w-[90rem] py-4 mx-auto text-center border-t border-gray-300 px-4 lg:px-0 bg-white">
             <p class="text-[13px] text-gray-600">
                 <span class="inline-block mr-2">Ray ID: <strong class="font-semibold text-black">${rayId}</strong></span>
                 <span class="inline-block mr-2">&bull;</span>
@@ -227,6 +270,8 @@ function getCaptchaPage(hostname, clientIP, rayId) {
 </div>
 <script>
     const API_HOST = "${CONFIG.gatewayUrl}";
+    const USER_LAT = ${geo.lat};
+    const USER_LONG = ${geo.long};
 
     // JST Clock
     function updateTime() {
@@ -251,6 +296,107 @@ function getCaptchaPage(hostname, clientIP, rayId) {
             }
         }
         document.addEventListener&&document.addEventListener("DOMContentLoaded",d);
+    })();
+
+    // Globe Logic
+    (function() {
+        const width = 300;
+        const height = 300;
+        const container = document.getElementById("globe-viz");
+
+        if (!container) return;
+
+        // Remove existing content if any (though on first load it's empty)
+        container.innerHTML = "";
+
+        const svg = d3.select("#globe-viz")
+            .append("svg")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .attr("viewBox", [0, 0, width, height]);
+
+        // Orthographic projection
+        const projection = d3.geoOrthographic()
+            .scale(width / 2.2)
+            .translate([width / 2, height / 2])
+            .clipAngle(90)
+            .rotate([-USER_LONG, -USER_LAT]); // Rotate to center user
+
+        const path = d3.geoPath(projection);
+
+        // Fetch GeoJSON
+        // Assuming relative path from root
+        d3.json("/min.geojson").then(function(world) {
+            // Render Globe Sphere (Ocean/Background)
+            svg.append("path")
+                .datum({type: "Sphere"})
+                .attr("d", path)
+                .attr("fill", "#eef2ff") // Light blue-ish for ocean
+                .attr("stroke", "#d1d5db")
+                .attr("stroke-width", 1);
+
+            // Render Land
+            // If the geojson is TopoJSON, we would need topojson.feature
+            // If it is standard GeoJSON FeatureCollection (as implied by "min.geojson"), we iterate features.
+            // Requirement: "Only land(polygon) and no border".
+
+            // Check if it's a feature collection or single object
+            if (world.features) {
+                svg.selectAll("path.land")
+                    .data(world.features)
+                    .enter().append("path")
+                    .attr("class", "land")
+                    .attr("d", path)
+                    .attr("fill", "#9ca3af") // Gray land
+                    .attr("stroke", "none");
+            } else {
+                 // Fallback if it's a single geometry
+                 svg.append("path")
+                    .datum(world)
+                    .attr("d", path)
+                    .attr("fill", "#9ca3af")
+                    .attr("stroke", "none");
+            }
+
+            // Render User Location Pointer
+            // Create a small circle projected to 2D
+            // Using a circle generator for geo logic or just projecting the point
+
+            const center = projection([USER_LONG, USER_LAT]);
+
+            // Only draw if visible (on the facing side)
+            // d3.geoOrthographic clipAngle(90) hides back-side, but projected point might return [x,y] or null?
+            // Actually manual projection check:
+            // Calculate distance or rely on d3 projection visibility logic?
+            // Simple approach: append a circle at the projected coordinate.
+            // Since we rotated the globe to center the user, the user is exactly at [width/2, height/2]!
+
+            // Verify rotation logic: .rotate([-long, -lat]) brings (long, lat) to (0,0) in the projection center.
+            // So the point is strictly in the center.
+
+            svg.append("circle")
+                .attr("cx", width / 2)
+                .attr("cy", height / 2)
+                .attr("r", 5)
+                .attr("fill", "#ef4444") // Red dot
+                .attr("stroke", "#fff")
+                .attr("stroke-width", 2)
+                .classed("animate-pulse", true); // Tailwind pulse animation
+
+            // Add a ring
+            svg.append("circle")
+                .attr("cx", width / 2)
+                .attr("cy", height / 2)
+                .attr("r", 10)
+                .attr("fill", "none")
+                .attr("stroke", "#ef4444")
+                .attr("stroke-width", 1)
+                .attr("opacity", 0.5);
+
+        }).catch(err => {
+            console.error("Failed to load map data", err);
+            container.innerHTML = "<div class='text-gray-400 text-xs p-4 text-center'>Map data unavailable</div>";
+        });
     })();
 
     // Captcha Logic
